@@ -296,12 +296,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (apiKeyOpenRouterInput.parentElement.style.display !== 'none' && !apiKeyOpenRouterInput.value.trim()) { throw new Error('请输入 OpenRouter API 密钥'); }
         if (!promptNanoBananaInput.value.trim()) { throw new Error('请输入提示词'); }
         statusUpdate('正在生成图片...');
-        const base64Images = await Promise.all(modelStates.nanobanana.inputs.files.map(fileToBase64));
-        const requestBody = { model: modelId, prompt: modelStates.nanobanana.inputs.prompt, images: base64Images, apikey: apiKeyOpenRouterInput.value };
-        const response = await fetch('/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        const data = await response.json();
-        if (!response.ok || data.error) { throw new Error(data.error || `服务器错误: ${response.status}`); }
-        return [data.imageUrl];
+        if (modelId === 'nanobanana3'){
+            const base64Images = await Promise.all(modelStates.nanobanana3.inputs.files.map(fileToBase64));
+            const requestBody = { model: modelId, prompt: modelStates.nanobanana3.inputs.prompt, images: base64Images, apikey: apiKeyOpenRouterInput.value };
+            const response = await fetch('/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+            const data = await response.json();
+            if (!response.ok || data.error) { throw new Error(data.error || `服务器错误: ${response.status}`); }
+            return [data.imageUrl];
+        }else{
+            const base64Images = await Promise.all(modelStates.nanobanana.inputs.files.map(fileToBase64));
+            const requestBody = { model: modelId, prompt: modelStates.nanobanana.inputs.prompt, images: base64Images, apikey: apiKeyOpenRouterInput.value };
+            const response = await fetch('/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+            const data = await response.json();
+            if (!response.ok || data.error) { throw new Error(data.error || `服务器错误: ${response.status}`); }
+            return [data.imageUrl];
+        }
     }
 
     async function handleModelScopeGeneration(statusUpdate) {
