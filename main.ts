@@ -17,9 +17,13 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // =======================================================
 // 模块 1: OpenRouter API 调用逻辑 (用于 nano banana)
 // =======================================================
-async function callOpenRouter(messages: any[], apiKey: string): Promise<{ type: 'image' | 'text'; content: string }> {
+async function callOpenRouter(messages: any[], apiKey: string, model: string): Promise<{ type: 'image' | 'text'; content: string }> {
     if (!apiKey) { throw new Error("callOpenRouter received an empty apiKey."); }
-    const openrouterPayload = { model: "google/gemini-2.5-flash-image-preview", messages };
+    let geminiModel = "google/gemini-2.5-flash-image-preview";
+    if (model === "nanobanana3") {
+        geminiModel = "google/gemini-3-pro-image-preview";
+    }
+    const openrouterPayload = { model: geminiModel, messages };
     console.log("Sending payload to OpenRouter:", JSON.stringify(openrouterPayload, null, 2));
     const apiResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -130,7 +134,7 @@ serve(async (req) => {
             const requestData = await req.json();
             const { model, apikey, prompt, images, parameters, timeout } = requestData;
 
-            if (model === 'nanobanana') {
+            if (model === 'nanobanana' || model === 'nanobanana3') {
                 const openrouterApiKey = apikey || Deno.env.get("OPENROUTER_API_KEY");
                 if (!openrouterApiKey) { return createJsonErrorResponse("OpenRouter API key is not set.", 500); }
                 if (!prompt) { return createJsonErrorResponse("Prompt is required.", 400); }
@@ -140,7 +144,7 @@ serve(async (req) => {
                     contentPayload.push(...imageParts);
                 }
                 const webUiMessages = [{ role: "user", content: contentPayload }];
-                const result = await callOpenRouter(webUiMessages, openrouterApiKey);
+                const result = await callOpenRouter(webUiMessages, openrouterApiKey, model);
                 if (result.type === 'image') {
                     return new Response(JSON.stringify({ imageUrl: result.content }), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
                 } else {

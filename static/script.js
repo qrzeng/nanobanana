@@ -85,6 +85,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (modelId === 'nanobanana') {
             state.inputs.prompt = promptNanoBananaInput.value;
             state.inputs.files = selectedFiles;
+        } else if (modelId === 'nanobanana3'){
+            state.inputs.prompt = promptNanoBananaInput.value;
+            state.inputs.files = selectedFiles;
         } else {
             state.inputs.prompt = promptPositiveInput.value;
             state.inputs.negative_prompt = promptNegativeInput.value;
@@ -162,10 +165,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateActiveModelUI() {
-        if (currentModel === 'nanobanana') { nanobananaControls.classList.remove('hidden'); modelscopeControls.classList.add('hidden'); } 
+        if (currentModel === 'nanobanana' || currentModel === 'nanobanana3') { nanobananaControls.classList.remove('hidden'); modelscopeControls.classList.add('hidden'); } 
         else { nanobananaControls.classList.add('hidden'); modelscopeControls.classList.remove('hidden'); }
         nanobananaPromptRemark.textContent = ''; modelscopePromptRemark.textContent = ''; modelscopeNegativePromptRemark.textContent = '';
-        if (currentModel === 'nanobanana') { nanobananaPromptRemark.textContent = '(支持中文提示词)'; } 
+        if (currentModel === 'nanobanana' || currentModel === 'nanobanana3') { nanobananaPromptRemark.textContent = '(支持中文提示词)'; } 
         else { let remarkText = ''; if (currentModel === 'Qwen/Qwen-Image') { remarkText = '(支持中文提示词)'; } else if (currentModel.includes('FLUX') || currentModel.includes('Kontext') || currentModel.includes('Krea')) { remarkText = '(请使用英文提示词)'; } modelscopePromptRemark.textContent = remarkText; modelscopeNegativePromptRemark.textContent = remarkText; }
     }
     
@@ -196,7 +199,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function updateGenerateButtonState() {
         const isTaskRunning = modelStates[currentModel].task.isRunning;
-        const currentPanel = (currentModel === 'nanobanana') ? nanobananaControls : modelscopeControls;
+        const currentPanel = (currentModel === 'nanobanana' || currentModel === 'nanobanana3') ? nanobananaControls : modelscopeControls;
         const currentButton = currentPanel.querySelector('.generate-btn');
         const btnText = currentButton.querySelector('.btn-text');
         const spinner = currentButton.querySelector('.spinner');
@@ -255,8 +258,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             statusUpdate('准备请求...');
 
             let imageUrls;
-            if (modelId === 'nanobanana') {
-                imageUrls = await handleNanoBananaGeneration(statusUpdate);
+            if (modelId === 'nanobanana' || modelId === 'nanobanana3') {
+                imageUrls = await handleNanoBananaGeneration(statusUpdate, modelId);
             } else {
                 imageUrls = await handleModelScopeGeneration(statusUpdate);
             }
@@ -289,12 +292,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return response;
     }
 
-    async function handleNanoBananaGeneration(statusUpdate) {
+    async function handleNanoBananaGeneration(statusUpdate, modelId) {
         if (apiKeyOpenRouterInput.parentElement.style.display !== 'none' && !apiKeyOpenRouterInput.value.trim()) { throw new Error('请输入 OpenRouter API 密钥'); }
         if (!promptNanoBananaInput.value.trim()) { throw new Error('请输入提示词'); }
         statusUpdate('正在生成图片...');
         const base64Images = await Promise.all(modelStates.nanobanana.inputs.files.map(fileToBase64));
-        const requestBody = { model: 'nanobanana', prompt: modelStates.nanobanana.inputs.prompt, images: base64Images, apikey: apiKeyOpenRouterInput.value };
+        const requestBody = { model: modelId, prompt: modelStates.nanobanana.inputs.prompt, images: base64Images, apikey: apiKeyOpenRouterInput.value };
         const response = await fetch('/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
         const data = await response.json();
         if (!response.ok || data.error) { throw new Error(data.error || `服务器错误: ${response.status}`); }
